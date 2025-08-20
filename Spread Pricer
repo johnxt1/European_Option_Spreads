@@ -106,10 +106,19 @@ def main():
     print("4: Butterfly Spread")
     choice = int(input("Enter choice (1-4): "))
 
+    if choice not in (1,2,3,4):
+        print('Invalid Choice');exit(1)
+
     K1 = float(input("Enter lower strike K1: "))
     K2 = float(input("Enter upper strike K2: "))
     N = int(input("Enter steps to expiry N: "))
-   
+
+    if K1<=0 or K2<=0 or N<=0:
+        print('Values must be positive');exit(1)
+
+    if K1 >= K2:
+        print("Error: K1 must be less than K2");exit(1)
+    
     option_dict = {
         1: BullSpread,
         2: BearSpread,
@@ -124,4 +133,5 @@ def main():
     print(f"{option_class.__name__} price: {price:.3f}")
 
 main()
+
 

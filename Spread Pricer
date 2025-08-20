@@ -32,10 +32,7 @@ class BinModel:
 def NewtonSymb(N, n):
     if n < 0 or n > N:
         return 0
-    result = 1
-    for i in range(1, n+1):
-        result *= (N - n + i)/i
-    return result
+    return math.comb(N, n)
 
 # ---------------- Base Class ----------------
 class EuropeanOption:
@@ -133,5 +130,3 @@ def main():
     print(f"{option_class.__name__} price: {price:.3f}")
 
 main()
-
-

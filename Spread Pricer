@@ -1,0 +1,127 @@
+import math
+
+# ---------------- Binomial Model ----------------
+class BinModel:
+    def __init__(self):
+        self.S0 = 0
+        self.U = 0
+        self.D = 0
+        self.R = 0
+
+    def GetInputData(self):
+        print("Enter input data in multiplicative form (e.g., U=1.1, D=0.9, R=1.02)")
+        self.S0 = float(input("Enter initial stock price S0: "))
+        self.U = float(input("Enter up factor U: "))
+        self.D = float(input("Enter down factor D: "))
+        self.R = float(input("Enter risk-free rate R: "))
+        
+        if self.S0 <= 0 or self.U <= 0 or self.D <= 0 or self.U <= self.D or self.R <= 0:
+            print("Illegal data ranges"); exit(1)
+        if self.R >= self.U or self.R <= self.D:
+            print("Arbitrage exists"); exit(1)
+
+        print("Input data checked — no arbitrage\n")    
+
+    def RiskNeutProb(self):
+        return (self.R - self.D) / (self.U - self.D)
+
+    def S(self, n, i):
+        return self.S0 * (self.U ** i) * (self.D ** (n - i))
+
+# ---------------- Binomial coefficient ----------------
+def NewtonSymb(N, n):
+    if n < 0 or n > N:
+        return 0
+    result = 1
+    for i in range(1, n+1):
+        result *= (N - n + i)/i
+    return result
+
+# ---------------- Base Class ----------------
+class EuropeanOption:
+    def __init__(self, K1, K2, N):
+        self.K1 = K1
+        self.K2 = K2
+        self.N = N 
+
+    def Payoff(self, S):
+        """To be overridden in subclasses"""
+        raise NotImplementedError
+
+    def PriceByCRR(self, model):
+        p = model.RiskNeutProb()
+        price = 0
+        for n in range(self.N + 1):
+            ST = model.S(self.N, n)
+            price += NewtonSymb(self.N, n) * (p ** n) * ((1-p) ** (self.N-n)) * self.Payoff(ST)
+        return price / (model.R ** self.N)
+
+# ---------------- Subclasses for Spreads ----------------
+class BullSpread(EuropeanOption):
+    def Payoff(self, S):
+        if S <= self.K1:
+            return 0
+        elif S < self.K2:
+            return S - self.K1
+        else:
+            return self.K2 - self.K1
+
+class BearSpread(EuropeanOption):
+    def Payoff(self, S):
+        if S <= self.K1:
+            return self.K2 - self.K1
+        elif S < self.K2:
+            return self.K2 - S
+        else:
+            return 0
+
+class StrangleSpread(EuropeanOption):
+    def Payoff(self, S):
+        if S <= self.K1:
+            return self.K1 - S
+        elif S <= self.K2:
+            return 0
+        else:
+            return S - self.K2
+
+class ButterflySpread(EuropeanOption):
+    def Payoff(self, S):
+        mid = (self.K1 + self.K2)/2
+        if self.K1 < S <= mid:
+            return S - self.K1
+        elif mid < S <= self.K2:
+            return self.K2 - S
+        else:
+            return 0
+
+# ---------------- Main Program ----------------
+def main():
+    model = BinModel()
+    model.GetInputData()
+
+    print("\nChoose spread type:")
+    print("1: Bull Spread")
+    print("2: Bear Spread")
+    print("3: Strangle Spread")
+    print("4: Butterfly Spread")
+    choice = int(input("Enter choice (1-4): "))
+
+    K1 = float(input("Enter lower strike K1: "))
+    K2 = float(input("Enter upper strike K2: "))
+    N = int(input("Enter steps to expiry N: "))
+   
+    option_dict = {
+        1: BullSpread,
+        2: BearSpread,
+        3: StrangleSpread,
+        4: ButterflySpread
+    }
+
+    option_class = option_dict.get(choice)
+
+    option = option_class(K1, K2, N)
+    price = option.PriceByCRR(model)
+    print(f"{option_class.__name__} price: {price:.3f}")
+
+main()
+
